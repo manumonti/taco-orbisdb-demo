@@ -99,45 +99,48 @@ export default function PostPage({
     try {
       setPostStream(stream_id);
       const user = await orbis.getConnectedUser();
-      if (user) {
-        const query = await orbis
-          .select()
-          .raw(
-            `
-            SELECT
-              *,
-              (
-                SELECT json_build_object( 'name', name, 'username', username, 'description', description, 'profile_imageid', profile_imageid, 'stream_id', stream_id)
-                FROM ${env.NEXT_PUBLIC_PROFILE_ID} as profile
-                WHERE profile.controller = post.controller
-              ) as profile,
-              (
-                SELECT json_agg(json_build_object('comment', comment, 'imageid', imageid,
-                'profile', (SELECT json_build_object( 'name', name, 'username', username, 'description', description, 'profile_imageid', profile_imageid, 'stream_id', stream_id)
-                FROM ${env.NEXT_PUBLIC_PROFILE_ID} as profile
-                WHERE profile.controller = comment.controller)
-                ))
-                FROM ${env.NEXT_PUBLIC_COMMENT_ID} as comment
-                WHERE comment.poststream = post.stream_id
-              ) as comments
-              FROM ${env.NEXT_PUBLIC_POST_ID} as post
-              WHERE post.stream_id = '${stream_id}'
-            `,
-          )
-          .run();
+      if (!user) {
+        console.error("No user found");
+        return;
+      }
+      const query = await orbis
+        .select()
+        .raw(
+          `
+          SELECT
+            *,
+            (
+              SELECT json_build_object( 'name', name, 'username', username, 'description', description, 'profile_imageid', profile_imageid, 'stream_id', stream_id)
+              FROM ${env.NEXT_PUBLIC_PROFILE_ID} as profile
+              WHERE profile.controller = post.controller
+            ) as profile,
+            (
+              SELECT json_agg(json_build_object('comment', comment, 'imageid', imageid,
+              'profile', (SELECT json_build_object( 'name', name, 'username', username, 'description', description, 'profile_imageid', profile_imageid, 'stream_id', stream_id)
+              FROM ${env.NEXT_PUBLIC_PROFILE_ID} as profile
+              WHERE profile.controller = comment.controller)
+              ))
+              FROM ${env.NEXT_PUBLIC_COMMENT_ID} as comment
+              WHERE comment.poststream = post.stream_id
+            ) as comments
+            FROM ${env.NEXT_PUBLIC_POST_ID} as post
+            WHERE post.stream_id = '${stream_id}'
+          `,
+        )
+        .run();
 
-        const postResult = query.rows as Post[];
-        if (postResult.length) {
-          setMessage(postResult[0]);
-          // Decrypt the post with TACo
-          decryptWithTACo(postResult[0].body, provider, signer).then(
-            (decrypted) => {
-              if (decrypted) {
-                setDecryptedBody(decrypted.toString());
-              }
-            },
-          );
-        }
+      const postResult = query.rows as Post[];
+      if (postResult.length) {
+        setMessage(postResult[0]);
+        // Decrypt the post with TACo
+
+        decryptWithTACo(postResult[0].body, provider, signer).then(
+          (decrypted) => {
+            if (decrypted) {
+              setDecryptedBody(decrypted.toString());
+            }
+          },
+        );
       }
     } catch (error) {
       console.error(error);
