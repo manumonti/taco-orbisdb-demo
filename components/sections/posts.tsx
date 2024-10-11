@@ -54,9 +54,6 @@ export default function Posts() {
           queryResult.forEach((post) => {
             decryptWithTACo(post.body, provider, signer).then(
               (decryptedBody) => {
-                console.log("Then reached!");
-                console.log(decryptedBody);
-                console.log(decryptedBodies);
                 if (decryptedBody) {
                   setDecryptedBodies((prev) => ({
                     ...prev,
