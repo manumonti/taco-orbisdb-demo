@@ -1,4 +1,6 @@
-import { useEffect, useContext } from "react";
+import { useContext } from "react";
+import { OrbisConnectResult, SiwxAttestation } from "@useorbis/db-sdk";
+import { SiweMessage } from "siwe";
 import {
   conditions,
   decrypt,
@@ -6,8 +8,8 @@ import {
   ThresholdMessageKit,
 } from "@nucypher/taco";
 import {
-  EIP4361AuthProvider,
-  USER_ADDRESS_PARAM_DEFAULT,
+  SingleSignOnEIP4361AuthProvider,
+  USER_ADDRESS_PARAM_EXTERNAL_EIP4361,
 } from "@nucypher/taco-auth";
 import { ethers } from "ethers";
 import { TACoContext } from "../context/TACoContext";
@@ -42,25 +44,58 @@ export default function useTaco() {
   ) {
     if (!isInitialized) return;
 
-    try {
-      const tmk = ThresholdMessageKit.fromBytes(decodeB64(encryptedMessage));
-      const conditionContext =
-        conditions.context.ConditionContext.fromMessageKit(tmk);
+    const { siweMessage, siweSignature } =
+      await loadSiweFromOrbisSession(signer);
 
-      const authProvider = new EIP4361AuthProvider(provider, signer);
+    const tmk = ThresholdMessageKit.fromBytes(decodeB64(encryptedMessage));
 
-      conditionContext.addAuthProvider(
-        USER_ADDRESS_PARAM_DEFAULT,
-        authProvider,
+    const authProvider =
+      await SingleSignOnEIP4361AuthProvider.fromExistingSiweInfo(
+        siweMessage,
+        siweSignature,
       );
 
-      const decrypted = await decrypt(provider, domain, tmk, conditionContext);
+    const conditionContext =
+      conditions.context.ConditionContext.fromMessageKit(tmk);
+    conditionContext.addAuthProvider(
+      USER_ADDRESS_PARAM_EXTERNAL_EIP4361,
+      authProvider,
+    );
 
+    try {
+      const decrypted = await decrypt(provider, domain, tmk, conditionContext);
       return new TextDecoder().decode(decrypted);
     } catch (error) {
       console.error("Decryption failed:", error);
       return encryptedMessage;
     }
+  }
+
+  async function loadSiweFromOrbisSession(signer: ethers.Signer) {
+    const orbisAttestation = (
+      JSON.parse(
+        localStorage.getItem("orbis:session") ?? "{}",
+      ) as OrbisConnectResult
+    ).session.authAttestation as SiwxAttestation;
+    const orbisSiweMessage = orbisAttestation.siwx.message;
+
+    const siwe = new SiweMessage({
+      domain: orbisSiweMessage.domain,
+      address: ethers.utils.getAddress(orbisSiweMessage.address),
+      statement: orbisSiweMessage.statement,
+      uri: orbisSiweMessage.uri,
+      version: orbisSiweMessage.version,
+      nonce: orbisSiweMessage.nonce,
+      issuedAt: orbisSiweMessage.issuedAt,
+      expirationTime: orbisSiweMessage.expirationTime,
+      chainId: Number(orbisSiweMessage.chainId),
+      resources: orbisSiweMessage.resources,
+    });
+
+    const siweMessage = siwe.prepareMessage();
+    const siweSignature = await signer.signMessage(siweMessage);
+
+    return { siweMessage, siweSignature };
   }
 
   function encodeB64(uint8Array: any) {
