@@ -130,18 +130,22 @@ export default function PostPage({
         .run();
 
       const postResult = query.rows as Post[];
-      if (postResult.length) {
-        setMessage(postResult[0]);
-        // Decrypt the post with TACo
 
-        decryptWithTACo(postResult[0].body, provider, signer).then(
-          (decrypted) => {
-            if (decrypted) {
-              setDecryptedBody(decrypted.toString());
-            }
-          },
-        );
+      if (postResult.length === 0) {
+        console.error("Error: no post found");
+        return;
       }
+
+      setMessage(postResult[0]);
+
+      // Decrypt the post with TACo
+      decryptWithTACo(postResult[0].body, provider, signer).then(
+        (decrypted) => {
+          if (decrypted) {
+            setDecryptedBody(decrypted.toString());
+          }
+        },
+      );
     } catch (error) {
       console.error(error);
       return undefined;
