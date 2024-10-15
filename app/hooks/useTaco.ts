@@ -1,6 +1,7 @@
 import { useContext } from "react";
+import { DIDSession } from "did-session";
 import { OrbisConnectResult, SiwxAttestation } from "@useorbis/db-sdk";
-import { SiweMessage } from "siwe";
+import { SiweMessage } from "@didtools/cacao";
 import {
   conditions,
   decrypt,
@@ -44,15 +45,18 @@ export default function useTaco() {
   ) {
     if (!isInitialized) return;
 
-    const { siweMessage, siweSignature } =
-      await loadSiweFromOrbisSession(signer);
+    const siweInfo = await loadSiweFromOrbisSession(signer);
+    if (!siweInfo) {
+      console.error("No valid SIWE info found");
+      return;
+    }
 
     const tmk = ThresholdMessageKit.fromBytes(decodeB64(encryptedMessage));
 
     const authProvider =
       await SingleSignOnEIP4361AuthProvider.fromExistingSiweInfo(
-        siweMessage,
-        siweSignature,
+        siweInfo.messageStr,
+        siweInfo.signature,
       );
 
     const conditionContext =
@@ -72,30 +76,19 @@ export default function useTaco() {
   }
 
   async function loadSiweFromOrbisSession(signer: ethers.Signer) {
-    const orbisAttestation = (
-      JSON.parse(
-        localStorage.getItem("orbis:session") ?? "{}",
-      ) as OrbisConnectResult
-    ).session.authAttestation as SiwxAttestation;
-    const orbisSiweMessage = orbisAttestation.siwx.message;
+    const sessionStr = JSON.parse(localStorage.getItem("orbis:session") ?? "{}")
+      .session.session;
 
-    const siwe = new SiweMessage({
-      domain: orbisSiweMessage.domain,
-      address: ethers.utils.getAddress(orbisSiweMessage.address),
-      statement: orbisSiweMessage.statement,
-      uri: orbisSiweMessage.uri,
-      version: orbisSiweMessage.version,
-      nonce: orbisSiweMessage.nonce,
-      issuedAt: orbisSiweMessage.issuedAt,
-      expirationTime: orbisSiweMessage.expirationTime,
-      chainId: Number(orbisSiweMessage.chainId),
-      resources: orbisSiweMessage.resources,
-    });
+    if (!sessionStr) return;
 
-    const siweMessage = siwe.prepareMessage();
-    const siweSignature = await signer.signMessage(siweMessage);
+    const session = await DIDSession.fromSession(sessionStr);
+    const siweMessage = SiweMessage.fromCacao(session.cacao);
+    const messageStr = siweMessage.toMessageEip55();
+    const signature = siweMessage.signature;
 
-    return { siweMessage, siweSignature };
+    if (!signature) return;
+
+    return { messageStr, signature };
   }
 
   function encodeB64(uint8Array: any) {

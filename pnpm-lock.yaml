@@ -8,6 +8,9 @@ dependencies:
   '@auth/prisma-adapter':
     specifier: ^2.4.1
     version: 2.5.3(@prisma/client@5.20.0)
+  '@didtools/cacao':
+    specifier: ^3.0.1
+    version: 3.0.1(typescript@5.6.2)(zod@3.23.8)
   '@hookform/resolvers':
     specifier: ^3.6.0
     version: 3.9.0(react-hook-form@7.53.0)
@@ -143,6 +146,9 @@ dependencies:
   clsx:
     specifier: ^2.1.1
     version: 2.1.1
+  did-session:
+    specifier: ^4.0.0
+    version: 4.0.0(typescript@5.6.2)(zod@3.23.8)
   ethers:
     specifier: ^5
     version: 5.7.2
@@ -182,9 +188,6 @@ dependencies:
   react-textarea-autosize:
     specifier: ^8.5.3
     version: 8.5.3(@types/react@18.3.10)(react@18.3.1)
-  siwe:
-    specifier: ^2.3.2
-    version: 2.3.2(ethers@5.7.2)
   sonner:
     specifier: ^1.5.0
     version: 1.5.0(react-dom@18.3.1)(react@18.3.1)
@@ -2120,6 +2123,16 @@ packages:
       fast-json-stable-stringify: 2.1.0
       rpc-utils: 0.6.2
       uint8arrays: 4.0.10
+      varint: 6.0.0
+    dev: false
+
+  /@didtools/key-webcrypto@0.2.0:
+    resolution: {integrity: sha512-5WK2Np0Tb6ApDoK71vYmEGiIdwLKzaEjr5KTK6RXFdl5xJnOYOHGkn4Ohco9D0UsoUGyDZE/ztlXmPQIbzHXQA==}
+    engines: {node: '>=14.14'}
+    dependencies:
+      fast-json-stable-stringify: 2.1.0
+      rpc-utils: 0.6.2
+      uint8arrays: 5.1.0
       varint: 6.0.0
     dev: false
 
@@ -10335,6 +10348,24 @@ packages:
       uint8arrays: 4.0.10
     dev: false
 
+  /did-session@4.0.0(typescript@5.6.2)(zod@3.23.8):
+    resolution: {integrity: sha512-qxZD208F7HCQppDjLxSkWG5/6MtcyzU2+Lm/KBtWH2WLuuzusu4ce8KWJ2Vd0sG5MyvgNWaECzXZsc8OQZTfZw==}
+    engines: {node: '>=14.14'}
+    dependencies:
+      '@didtools/key-webcrypto': 0.2.0
+      '@stablelib/random': 1.0.2
+      caip: 1.1.1
+      dids: 5.0.2(typescript@5.6.2)(zod@3.23.8)
+      key-did-provider-ed25519: 4.0.2(typescript@5.6.2)(zod@3.23.8)
+      key-did-resolver: 4.0.0
+      uint8arrays: 5.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
+    dev: false
+
   /dids@4.0.4:
     resolution: {integrity: sha512-PKxQP0QFqgeMe0dbL7LCRdPJVhZU2ejj8RWCfJ6vro3a+o5o32cWNM1X6YXpdIWq6G5fTJw9KO2dHj2ZzYDc7w==}
     engines: {node: '>=14.14'}
@@ -12955,6 +12986,23 @@ packages:
       fast-json-stable-stringify: 2.1.0
       rpc-utils: 0.6.2
       uint8arrays: 4.0.10
+    dev: false
+
+  /key-did-provider-ed25519@4.0.2(typescript@5.6.2)(zod@3.23.8):
+    resolution: {integrity: sha512-bnnRGuuUtylKGMVmgXVSoGccBg87roFi6xy5dQmTgNqnCmrxBBUatYoVimcnA+SGCFqi2qk6B9dD10Ed4rTZPg==}
+    engines: {node: '>=14.14'}
+    dependencies:
+      '@noble/curves': 1.6.0
+      did-jwt: 7.4.7
+      dids: 5.0.2(typescript@5.6.2)(zod@3.23.8)
+      fast-json-stable-stringify: 2.1.0
+      rpc-utils: 0.6.2
+      uint8arrays: 5.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
+      - zod
     dev: false
 
   /key-did-resolver@3.0.0:
